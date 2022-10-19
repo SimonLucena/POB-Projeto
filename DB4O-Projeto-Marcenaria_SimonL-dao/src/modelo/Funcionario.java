@@ -1,11 +1,14 @@
 package modelo;
 
+import java.util.ArrayList;
+
 public class Funcionario extends Pessoa{
 	private int id;
 	private double salario;
 	private double horas;
 	private String funcao;
-	
+	private ArrayList<Pedido> pedido = new ArrayList<>();
+
 	public Funcionario(String cpf, String nome, int telefone, int cep, String sexo, int idade, double salario, double horas, String funcao) {
 		super(cpf, nome, telefone, cep, sexo.toLowerCase(), idade);
 		this.salario = salario;
@@ -40,5 +43,9 @@ public class Funcionario extends Pessoa{
 	@Override
 	public String toString() {
 		return "Funcionário("+id+"), Nome="+getNome()+", Idade="+getIdade()+", Salario="+salario+", Horas="+horas+", Função="+funcao;
+	}
+	
+	public ArrayList<Pedido> getPedidos() {
+		return pedido;
 	}
 }

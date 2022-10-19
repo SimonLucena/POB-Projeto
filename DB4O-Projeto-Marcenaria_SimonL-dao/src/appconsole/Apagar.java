@@ -8,11 +8,11 @@ public class Apagar {
 		try {
 			Fachada.inicializar();
 			
-			Fachada.apagarEvento("01/08/2022");	
-			System.out.println("apagou palestra");
+			Fachada.apagarModelo(1);	
+			System.out.println("apagou modelo");
 			
-			Fachada.apagarParticipante("fake");
-			System.out.println("apagou fake");
+			Fachada.apagarPedido(2);
+			System.out.println("apagou pedido");
 			
 		} catch (Exception e) {
 			System.out.println("--->"+e.getMessage());

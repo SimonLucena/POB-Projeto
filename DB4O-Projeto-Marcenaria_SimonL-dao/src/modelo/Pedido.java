@@ -10,11 +10,12 @@ public class Pedido {
 	private Funcionario tecnico;
 	private List<Modelo> produto = new ArrayList<>();;
 	
-	public Pedido(int id, Cliente cliente, Funcionario vendedor, Funcionario tecnico) {
+	public Pedido(int id, Cliente cliente, Funcionario vendedor, Funcionario tecnico, List<Modelo> produto) {
 		this.id = id;
 		this.cliente = cliente;
 		this.vendedor = vendedor;
 		this.tecnico = tecnico;
+		this.produto = produto;
 	}
 	
 	public int getId() {
@@ -53,7 +54,7 @@ public class Pedido {
 		this.produto.add(produto);
 	}
 	
-	public void Remover(Modelo produto) {
+	public void remover(Modelo produto) {
 		this.produto.remove(produto);
 	}
 	

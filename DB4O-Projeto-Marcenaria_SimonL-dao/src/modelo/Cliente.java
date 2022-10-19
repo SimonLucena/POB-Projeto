@@ -1,7 +1,10 @@
 package modelo;
 
+import java.util.ArrayList;
+
 public class Cliente extends Pessoa {	
 	private double saldo = 0;
+	private ArrayList<Pedido> pedido = new ArrayList<>();
 	
 	public Cliente(String cpf, String nome, int telefone, int cep, String sexo, int idade) {
 		super(cpf, nome, telefone, cep, sexo.toLowerCase(), idade);
@@ -24,5 +27,9 @@ public class Cliente extends Pessoa {
 	@Override
 	public String toString() {
 		return "Cliente("+getCpf()+"), Nome="+getNome()+", Idade"+getIdade()+", Saldo="+saldo;
+	}
+	
+	public ArrayList<Pedido> getPedidos() {
+		return pedido;
 	}
 }

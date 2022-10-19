@@ -154,7 +154,7 @@ public class Fachada {
 		return mod;
 	}
 	//Pedido
-	public static Pedido criarPedido (int id, String cpf, String cpfFuncionario1, String cpfFuncionario2, ArrayList<int> idModelo) throws Exception {
+	public static Pedido criarPedido (int id, Cliente cliente, Funcionario vendedor, Funcionario tecnico) throws Exception {
 		DAO.begin();
 		//localizar Evento no repositorio, usando a data 
 		Pedido pe = DAOPedido.read(id);
@@ -164,7 +164,7 @@ public class Fachada {
 		}
 
 		//gerar id no repositorio
-		pe = new Pedido(id, cliente, vendedor, tecnico, produto);	
+		pe = new Pedido(id, cliente, vendedor, tecnico);	
 
 		//adicionar evento no reposit�rio
 		DAOPedido.create(pe);
@@ -173,77 +173,157 @@ public class Fachada {
 		return pe;
 	}
 
-	public static void apagarModelo(int id) throws Exception	{
-		DAO.begin();
-		//localizar evento no repositorio, usando id 
-		Modelo mo = DAOModelo.read(id);
-		if (mo == null) {
-			DAO.rollback();
-			throw new Exception("N�o deletou evento " + id + " - inexistente");
-		}
-		
-		//Remover este Modelo de todos os Pedidos e atualizar Pedidos 
-		for(Pedido pe : mo.getPedidos()) {
-			pe.remover(mo);
-			DAOPedido.update(pe);
-		}
-		
-		//apagar modelo no banco
-		DAOModelo.delete(mo);
-		DAO.commit();
-	}
-	
-	public static void apagarPedido(int id) throws Exception	{
-		DAO.begin();
-		//localizar evento no repositorio, usando id 
-		Pedido pe = DAOPedido.read(id);
-		if (pe == null) {
-			DAO.rollback();
-			throw new Exception("N�o deletou Pedido " + id + " - inexistente");
-		}
-		
-		//apagar modelo no banco
-		DAOPedido.delete(pe);
-		DAO.commit();
-	}
-
-	public static void 	apagarCliente(String nome) throws Exception {
+	public static void 	adicionarParticipanteEvento(String nome, int id) throws Exception {
 		nome = nome.trim();
 
 		DAO.begin();
 		//localizar participante no repositorio, usando o nome 
-		Cliente p = DAOCliente.read(nome);
+		Participante p = DAOCliente.read(nome);
 		if(p == null)  {
 			DAO.rollback();
-			throw new Exception("N�o deletou Cliente " + nome + " - inexistente");
+			throw new Exception("N�o adicionou participante " + nome + " - inexistente");
 		}
-		//participante nao pode ser deletado caso participe de algum Pedido
-		if(!p.getPedidos().isEmpty())  {
+
+		//localizar evento no repositorio, usando id 
+		Evento ev = DAOModelo.read(id);
+		if(ev == null)  {
 			DAO.rollback();
-			throw new Exception("N�o deletou Cliente " + nome + " - Cliente em Pedido");
+			throw new Exception("N�o adicionou participante "+nome+ " - evento " + id + " inexistente");
+		}
+
+		//localizar o participante dentro do evento, usando o nome
+		Participante paux = ev.localizar(nome);
+		if(paux != null) {
+			DAO.rollback(); 
+			throw new Exception("N�o adicionou participante " + nome + " - j� participa do evento " + id);
+		}
+		//adicionar o participante ao evento
+		ev.adicionar(p);
+		//adicionar o evento ao participante
+		p.adicionar(ev);
+
+		//atualizar objetos no banco
+		DAOModelo.update(ev);
+		DAOCliente.update(paux);
+		DAO.commit();
+	}
+
+	public static void 	removerParticipanteEvento(String nome, int id) throws Exception {
+		nome = nome.trim();
+
+		DAO.begin();
+		//localizar participante no repositorio, usando o nome 
+		Participante p = DAOCliente.read(nome);
+		if(p == null)  {
+			DAO.rollback();
+			throw new Exception("N�o removeu participante " + nome + " - inexistente");
+		}
+
+		//localizar evento no repositorio, usando id 
+		Evento ev = DAOModelo.read(id);
+		if(ev == null)  {
+			DAO.rollback();
+			throw new Exception("N�o removeu participante " + nome +" -  evento " + id + " inexistente");
+		}
+
+		//localizar o participante dentro do evento, usando o nome
+		Participante paux = ev.localizar(nome);
+		if(paux == null)  {
+			DAO.rollback();
+			throw new Exception("N�o removeu participante " + nome + " - nao participa do evento " + id);
+		}
+		//remover o participante do evento
+		ev.remover(p);
+		//remover o evento do participante
+		p.remover(ev);
+
+		//atualizar objetos no banco
+		DAOModelo.update(ev);
+		DAOCliente.update(p);
+		DAO.commit();
+	}
+
+	public static void apagarEvento(String data) throws Exception	{
+		data = data.trim();
+
+		DAO.begin();
+		//localizar evento no repositorio, usando id 
+		Evento ev = DAOModelo.readByData(data);
+		if (ev == null) {
+			DAO.rollback();
+			throw new Exception("N�o deletou evento " + data + " - inexistente");
+		}
+		
+		//Remover este evento de todos os participantes e atualizar participante 
+		for(Participante p : ev.getParticipantes()) {
+			p.remover(ev);
+			DAOCliente.update(p);
+		}
+		
+		//apagar evento no banco
+		DAOModelo.delete(ev);
+		DAO.commit();
+	}
+
+	public static void adiarEvento(String data, String novadata) throws Exception	{
+		data = data.trim();
+		novadata = novadata.trim();
+
+		DAO.begin();
+		//localizar evento no repositorio, usando data 
+		Evento ev = DAOModelo.readByData(data);
+		if (ev == null) {
+			DAO.rollback();
+			throw new Exception("N�o adiou evento - " + data +"  inexistente ");
+		}
+		//localizar evento no repositorio, usando novadata
+		Evento aux = DAOModelo.readByData(novadata);
+		if (aux != null) {
+			DAO.rollback();
+			throw new Exception("N�o adiou evento de " + data + " - ja tem evento na nova data " + novadata);
+		}
+		//alterar a data do evento
+		ev.setData(novadata);
+
+		//atualizar no banco
+		DAOModelo.update(ev);
+		DAO.commit();
+	}
+
+	public static void 	apagarParticipante(String nome) throws Exception {
+		nome = nome.trim();
+
+		DAO.begin();
+		//localizar participante no repositorio, usando o nome 
+		Participante p = DAOCliente.read(nome);
+		if(p == null)  {
+			DAO.rollback();
+			throw new Exception("N�o deletou participante " + nome + " - inexistente");
+		}
+		//participante nao pode ser deletado caso participe de algum evento
+		if(!p.getEventos().isEmpty())  {
+			DAO.rollback();
+			throw new Exception("N�o deletou participante " + nome + " - ja tem evento");
 		}
 		//apagar no banco
 		DAOCliente.delete(p);
 		DAO.commit();
 	}
-	
-	public static void 	apagarFuncionario(String nome) throws Exception {
-		nome = nome.trim();
 
-		DAO.begin();
-		//localizar Funcionario no repositorio, usando o nome 
-		Funcionario f = DAOFuncionario.read(nome);
-		if(f == null)  {
-			DAO.rollback();
-			throw new Exception("N�o deletou Cliente " + nome + " - inexistente");
-		}
-		//Funcionario nao pode ser deletado caso participe de algum Pedido
-		if(!f.getPedidos().isEmpty())  {
-			DAO.rollback();
-			throw new Exception("N�o deletou Funcionario " + nome + " - Funcionario em Pedido");
-		}
-		//apagar no banco
-		DAOFuncionario.delete(f);
-		DAO.commit();
+	
+	/*
+	 * CONSULTAS
+	 */
+	
+	public static List<Evento> consultarEventosNParticipantes(int n){
+		return DAOModelo.consultarEventosNParticipantes(n);
+	}
+	
+	public static int consultarTotalConvidados() {
+		return DAOFuncionario.consultarTotalConvidados();
+	}
+
+	public static int consultarTotalIdosos() {
+		return DAOCliente.consultarTotalIdosos();
 	}
 }
